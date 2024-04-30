@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-type queryServer struct {
+type QueryServer struct {
 	queryInfo    map[string]string
 	queryInfoMut sync.Mutex
 
@@ -20,25 +20,25 @@ type queryServer struct {
 	stop     chan bool
 }
 
-func New(queryInfo map[string]string, players []string) *queryServer {
-	query := &queryServer{queryInfo: queryInfo, tokenGen: tokenGenerator{}, players: players}
+func New(queryInfo map[string]string, players []string) *QueryServer {
+	query := &QueryServer{queryInfo: queryInfo, tokenGen: tokenGenerator{}, players: players}
 	query.tokenGen.generateToken()
 	return query
 }
 
-func (q *queryServer) SetQueryInfo(queryInfo map[string]string) {
+func (q *QueryServer) SetQueryInfo(queryInfo map[string]string) {
 	q.queryInfoMut.Lock()
 	q.queryInfo = queryInfo
 	q.queryInfoMut.Unlock()
 }
 
-func (q *queryServer) SetPlayers(players []string) {
+func (q *QueryServer) SetPlayers(players []string) {
 	q.playersMut.Lock()
 	q.players = players
 	q.playersMut.Unlock()
 }
 
-func (q *queryServer) Handle(buf *bytes.Buffer, addr net.Addr) error {
+func (q *QueryServer) Handle(buf *bytes.Buffer, addr net.Addr) error {
 	pk := request{}
 	if err := pk.Unmarshal(buf); err != nil {
 		return err
@@ -63,7 +63,7 @@ func (q *queryServer) Handle(buf *bytes.Buffer, addr net.Addr) error {
 	return nil
 }
 
-func (q *queryServer) Serve(addr string) error {
+func (q *QueryServer) Serve(addr string) error {
 	q.stop = make(chan bool)
 
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
@@ -98,7 +98,7 @@ func (q *queryServer) Serve(addr string) error {
 	}
 }
 
-func (q *queryServer) Close() error {
+func (q *QueryServer) Close() error {
 	close(q.stop)
 	if q.listener == nil {
 		return errors.New("listener is nil")

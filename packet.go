@@ -148,7 +148,6 @@ func (pk *response) Unmarshal(r io.Reader) error {
 		if index != -1 {
 			numBytes = numBytes[:index]
 		}
-		fmt.Println(numBytes)
 
 		var num int
 		negative := false
