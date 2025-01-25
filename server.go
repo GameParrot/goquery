@@ -32,6 +32,12 @@ func (q *QueryServer) SetQueryInfo(queryInfo map[string]string) {
 	q.queryInfoMut.Unlock()
 }
 
+func (q *QueryServer) Set(key, value string) {
+	q.queryInfoMut.Lock()
+	q.queryInfo[key] = value
+	q.queryInfoMut.Unlock()
+}
+
 func (q *QueryServer) SetPlayers(players []string) {
 	q.playersMut.Lock()
 	q.players = players
