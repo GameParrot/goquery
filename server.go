@@ -15,6 +15,8 @@ type QueryServer struct {
 	players    []string
 	playersMut sync.Mutex
 
+	infoFunc func() (map[string]string, []string)
+
 	tokenGen tokenGenerator
 	listener *net.UDPConn
 	stop     chan bool
@@ -24,6 +26,10 @@ func New(queryInfo map[string]string, players []string) *QueryServer {
 	query := &QueryServer{queryInfo: queryInfo, tokenGen: tokenGenerator{}, players: players}
 	query.tokenGen.generateToken()
 	return query
+}
+
+func (q *QueryServer) SetInfoFunc(f func() (map[string]string, []string)) {
+	q.infoFunc = f
 }
 
 func (q *QueryServer) SetQueryInfo(queryInfo map[string]string) {
@@ -58,11 +64,18 @@ func (q *QueryServer) Handle(buf *bytes.Buffer, addr net.Addr) error {
 		if pk.ResponseNumber != int32(getTokenString(q.tokenGen.token, addr.String())) {
 			return errors.New("mismatched response number")
 		}
-		q.queryInfoMut.Lock()
-		q.playersMut.Lock()
-		resp = response{ResponseType: queryTypeInformation, SequenceNumber: pk.SequenceNumber, ResponseNumber: pk.ResponseNumber, Information: q.queryInfo, Players: q.players}
-		q.queryInfoMut.Unlock()
-		q.playersMut.Unlock()
+		resp = response{ResponseType: queryTypeInformation, SequenceNumber: pk.SequenceNumber, ResponseNumber: pk.ResponseNumber}
+
+		if q.infoFunc == nil {
+			q.queryInfoMut.Lock()
+			q.playersMut.Lock()
+			resp.Information = q.queryInfo
+			resp.Players = q.players
+			q.queryInfoMut.Unlock()
+			q.playersMut.Unlock()
+		} else {
+			resp.Information, resp.Players = q.infoFunc()
+		}
 	}
 	buf.Reset()
 	resp.Marshal(buf)
