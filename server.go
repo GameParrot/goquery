@@ -15,7 +15,7 @@ type QueryServer struct {
 	players    []string
 	playersMut sync.Mutex
 
-	infoFunc func() (map[string]string, []string)
+	infoFunc func(addr net.Addr) (map[string]string, []string)
 
 	tokenGen tokenGenerator
 	listener *net.UDPConn
@@ -28,7 +28,7 @@ func New(queryInfo map[string]string, players []string) *QueryServer {
 	return query
 }
 
-func (q *QueryServer) SetInfoFunc(f func() (map[string]string, []string)) {
+func (q *QueryServer) SetInfoFunc(f func(addr net.Addr) (map[string]string, []string)) {
 	q.infoFunc = f
 }
 
@@ -74,7 +74,7 @@ func (q *QueryServer) Handle(buf *bytes.Buffer, addr net.Addr) error {
 			q.queryInfoMut.Unlock()
 			q.playersMut.Unlock()
 		} else {
-			resp.Information, resp.Players = q.infoFunc()
+			resp.Information, resp.Players = q.infoFunc(addr)
 		}
 	}
 	buf.Reset()
